@@ -1,11 +1,11 @@
 import { ADD_TODO, DELETE_TODO, EDIT_TODO, EDIT_STATUS } from "./actionTypes";
 
-let nextTodoId = 0;
+//let nextTodoId = 0;
 
-export const addTodo = task => ({
+export const addTodo = (id, task) => ({
   type: ADD_TODO,
   payload: {
-    id: ++nextTodoId,
+    id,
     task,
     status: 'due'
   }
