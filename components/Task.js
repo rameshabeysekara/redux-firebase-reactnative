@@ -1,22 +1,6 @@
 import React from "react";
-import {
-  Text,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-} from "react-native";
-import {
-  Title,
-  Paragraph,
-  Card,
-  Button,
-  TextInput,
-  RadioButton,
-  Modal,
-  Portal,
-  PaperProvider,
-} from "react-native-paper";
+import { Text, View, StyleSheet } from "react-native";
+import { Paragraph, Card, RadioButton } from "react-native-paper";
 import ButtonIcon from "./ButtonIcon";
 import Spacer from "./Spacer";
 import { FontAwesome as Icon } from "@expo/vector-icons";
