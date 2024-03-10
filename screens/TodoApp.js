@@ -1,19 +1,17 @@
-import * as React from "react";
-import { useEffect, useState } from "react"; // Import useState
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Text,
   View,
   StyleSheet,
   FlatList,
   ActivityIndicator,
-} from "react-native"; // Import ActivityIndicator
+} from "react-native";
 import Constants from "expo-constants";
 import Spacer from "../components/Spacer";
-import ButtonIcon from "../components/ButtonIcon";
 import Task from "../components/Task";
 import { Title, Card, Button, TextInput } from "react-native-paper";
 import { connect } from "react-redux";
-import { addTodo, deleteTodo, editTodo, resetTodoList } from "../redux/actions"; // Import resetTodoList action
+import { addTodo, deleteTodo, editTodo, resetTodoList } from "../redux/actions";
 import {
   getData,
   addData,
@@ -28,20 +26,14 @@ const TodoApp = ({
   deleteTodo,
   resetTodoList,
 }) => {
-  // Include resetTodoList in props
-  const [task, setTask] = React.useState("");
-  const [editSelected, setEditSelected] = React.useState(false);
-  const [indexEdit, setIndexEdit] = React.useState(null);
-  const [loading, setLoading] = useState(true); // State for loading indicator
+  const [task, setTask] = useState("");
+  const [editSelected, setEditSelected] = useState(false);
+  const [indexEdit, setIndexEdit] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      // Clear the Redux store before fetching data from Firebase
       await clearReduxStore();
       const data = await getData();
       data.forEach(({ id, task, status }) => addTodo(id, task, status));
@@ -50,19 +42,22 @@ const TodoApp = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [clearReduxStore, addTodo]);
 
-  const clearReduxStore = () => {
-    // Dispatch an action to reset the todo_list in the Redux store
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const clearReduxStore = useCallback(() => {
     return new Promise((resolve, reject) => {
       try {
-        resetTodoList(); // Dispatch action to clear the Redux store
+        resetTodoList();
         resolve();
       } catch (error) {
         reject(error);
       }
     });
-  };
+  }, [resetTodoList]);
 
   const handleAddTodo = async () => {
     try {
@@ -136,7 +131,7 @@ const TodoApp = ({
         </Card.Content>
       </Card>
       <Spacer />
-      {loading ? ( // Display loader if loading is true
+      {loading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
         <FlatList
@@ -176,6 +171,11 @@ const mapStateToProps = (state) => ({
   todo_list: state.todos.todo_list,
 });
 
-const mapDispatchToProps = { addTodo, editTodo, deleteTodo, resetTodoList }; // Include resetTodoList in mapDispatchToProps
+const mapDispatchToProps = {
+  addTodo,
+  editTodo,
+  deleteTodo,
+  resetTodoList,
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp);
