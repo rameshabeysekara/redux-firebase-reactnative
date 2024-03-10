@@ -1,13 +1,19 @@
 import * as React from "react";
-import { useEffect } from "react";
-import { Text, View, StyleSheet, FlatList } from "react-native";
+import { useEffect, useState } from "react"; // Import useState
+import {
+  Text,
+  View,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+} from "react-native"; // Import ActivityIndicator
 import Constants from "expo-constants";
 import Spacer from "../components/Spacer";
 import ButtonIcon from "../components/ButtonIcon";
 import Task from "../components/Task";
 import { Title, Card, Button, TextInput } from "react-native-paper";
 import { connect } from "react-redux";
-import { addTodo, deleteTodo, editTodo } from "../redux/actions";
+import { addTodo, deleteTodo, editTodo, resetTodoList } from "../redux/actions"; // Import resetTodoList action
 import {
   getData,
   addData,
@@ -15,31 +21,55 @@ import {
   deleteData,
 } from "../firebase/firestoreFunctions";
 
-const TodoApp = ({ todo_list, addTodo, editTodo, deleteTodo }) => {
+const TodoApp = ({
+  todo_list,
+  addTodo,
+  editTodo,
+  deleteTodo,
+  resetTodoList,
+}) => {
+  // Include resetTodoList in props
   const [task, setTask] = React.useState("");
   const [editSelected, setEditSelected] = React.useState(false);
   const [indexEdit, setIndexEdit] = React.useState(null);
+  const [loading, setLoading] = useState(true); // State for loading indicator
 
   useEffect(() => {
-    // Fetch data from Firebase only if todo_list is empty
-    if (todo_list.length === 0) {
-      const fetchData = async () => {
-        try {
-          const data = await getData();
-          data.forEach(({ id, task, status }) => addTodo(id, task));
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        }
-      };
-      fetchData();
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // Clear the Redux store before fetching data from Firebase
+      await clearReduxStore();
+      const data = await getData();
+      data.forEach(({ id, task, status }) => addTodo(id, task, status));
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
     }
-  }, []); // Empty dependency array ensures that this effect runs only once when the component mounts
+  };
+
+  const clearReduxStore = () => {
+    // Dispatch an action to reset the todo_list in the Redux store
+    return new Promise((resolve, reject) => {
+      try {
+        resetTodoList(); // Dispatch action to clear the Redux store
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
 
   const handleAddTodo = async () => {
     try {
       const id = await addData(task, "due");
-      addTodo(id, task);
+      addTodo(id, task, "due");
       setTask("");
+      fetchData();
     } catch (error) {
       console.error("Error adding todo: ", error);
     }
@@ -47,8 +77,9 @@ const TodoApp = ({ todo_list, addTodo, editTodo, deleteTodo }) => {
 
   const handleDeleteTodo = async (id) => {
     try {
-      await deleteData(id); // Delete task from Firestore
-      deleteTodo(id); // Remove task from Redux state
+      await deleteData(id);
+      deleteTodo(id);
+      fetchData();
     } catch (error) {
       console.error("Error deleting todo: ", error);
     }
@@ -64,6 +95,7 @@ const TodoApp = ({ todo_list, addTodo, editTodo, deleteTodo }) => {
       editTodo(todo_list[indexEdit].id, task);
       setTask("");
       setEditSelected(false);
+      fetchData();
     } catch (error) {
       console.error("Error editing todo: ", error);
     }
@@ -104,18 +136,23 @@ const TodoApp = ({ todo_list, addTodo, editTodo, deleteTodo }) => {
         </Card.Content>
       </Card>
       <Spacer />
-      <FlatList
-        data={todo_list}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <Task
-            key={index}
-            task={item}
-            onTaskRemoval={handleDeleteTodo}
-            onTaskEdit={editClicked}
-          />
-        )}
-      />
+      {loading ? ( // Display loader if loading is true
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <FlatList
+          data={todo_list}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <Task
+              key={index}
+              task={item}
+              onTaskRemoval={handleDeleteTodo}
+              onTaskEdit={editClicked}
+              fetchData={fetchData}
+            />
+          )}
+        />
+      )}
     </View>
   );
 };
@@ -139,6 +176,6 @@ const mapStateToProps = (state) => ({
   todo_list: state.todos.todo_list,
 });
 
-const mapDispatchToProps = { addTodo, editTodo, deleteTodo };
+const mapDispatchToProps = { addTodo, editTodo, deleteTodo, resetTodoList }; // Include resetTodoList in mapDispatchToProps
 
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp);

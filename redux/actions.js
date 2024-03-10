@@ -1,13 +1,11 @@
-import { ADD_TODO, DELETE_TODO, EDIT_TODO, EDIT_STATUS } from "./actionTypes";
+import { ADD_TODO, DELETE_TODO, EDIT_TODO, EDIT_STATUS, RESET_TODO_LIST } from "./actionTypes";
 
-//let nextTodoId = 0;
-
-export const addTodo = (id, task) => ({
+export const addTodo = (id, task, status) => ({
   type: ADD_TODO,
   payload: {
     id,
     task,
-    status: 'due'
+    status
   }
 });
 
@@ -34,4 +32,6 @@ export const deleteTodo = id => ({
   }
 });
 
-
+export const resetTodoList = () => ({
+  type: RESET_TODO_LIST
+});

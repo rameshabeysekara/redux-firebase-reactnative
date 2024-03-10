@@ -50,6 +50,7 @@ const Task = (props) => {
     props.editStatus(props.task.id, status); // Update status in Redux state
     try {
       await updateData(props.task.id, props.task.task, status); // Update status in Firestore
+      await props.fetchData();
     } catch (error) {
       console.error("Error updating status in Firestore: ", error);
     }
